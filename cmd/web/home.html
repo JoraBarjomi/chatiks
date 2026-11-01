@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css"
+    />
+
+    <title>Chat</title>
+    <script type="text/javascript">
+      window.onload = function () {
+        var conn;
+        var MAX_MESSAGES = 500;
+        var msg = document.getElementById("msg");
+        var log = document.getElementById("log");
+        var messages = document.getElementById("messages");
+
+        var NAME = sessionStorage.getItem("name");
+        if (!NAME) {
+          NAME = "User" + Math.floor(Math.random() * 10000);
+          sessionStorage.setItem("name", NAME);
+        }
+
+        function appendLog(item, forceScroll) {
+          var atBottom =
+            log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+          messages.appendChild(item);
+
+          while (messages.children.length > MAX_MESSAGES) {
+            messages.firstElementChild.remove();
+          }
+
+          if (atBottom || forceScroll) {
+            log.scrollTop = log.scrollHeight;
+          }
+        }
+
+        function updateOnline(n) {
+          document.getElementById("online").innerText = n;
+        }
+
+        function renderSystem(m) {
+          var p = document.createElement("p");
+          p.classList.add(
+            "has-text-centered",
+            "has-text-grey",
+            "is-size-7",
+            "my-3",
+          );
+          p.innerText = m.Text;
+          appendLog(p);
+        }
+
+        function renderMessage(m) {
+          var mine = m.User === NAME;
+
+          var row = document.createElement("div");
+          row.classList.add("msg-row");
+          if (mine) row.classList.add("is-mine");
+
+          var item = document.createElement("article");
+          item.classList.add("message", mine ? "is-info" : "is-dark");
+
+          var header = document.createElement("div");
+          header.classList.add("message-header");
+
+          var name = document.createElement("p");
+          name.innerText = mine ? m.User : m.User;
+
+          var time = document.createElement("span");
+          time.classList.add("is-size-7");
+          time.innerText = new Date(m.Time).toLocaleTimeString("ru-RU", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          header.appendChild(name);
+          header.appendChild(time);
+
+          var text = document.createElement("div");
+          text.classList.add("message-body");
+          text.innerText = m.Text;
+
+          item.appendChild(header);
+          item.appendChild(text);
+          row.appendChild(item);
+          appendLog(row, mine);
+        }
+
+        document.getElementById("form").onsubmit = function () {
+          if (!conn) {
+            return false;
+          }
+          if (!msg.value) {
+            return false;
+          }
+          conn.send(msg.value);
+          msg.value = "";
+          return false;
+        };
+
+        if (window["WebSocket"]) {
+          conn = new WebSocket(
+            "ws://" +
+              document.location.host +
+              "/ws?name=" +
+              encodeURIComponent(NAME),
+          );
+          conn.onclose = function (evt) {
+            var item = document.createElement("div");
+            item.classList.add("box");
+            item.innerHTML = "<b>Connection closed.</b>";
+            appendLog(item);
+          };
+          conn.onmessage = function (evt) {
+            var messages = evt.data.split("\n");
+            for (var i = 0; i < messages.length; i++) {
+              var m = JSON.parse(messages[i]);
+
+              switch (m.Type) {
+                case "Online":
+                  updateOnline(m.Online);
+                  break;
+                case "System":
+                  renderSystem(m);
+                  break;
+                default:
+                  renderMessage(m);
+              }
+            }
+          };
+        } else {
+          var item = document.createElement("div");
+          item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
+          appendLog(item);
+        }
+      };
+    </script>
+    <style type="text/css">
+      .chat-app {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+      }
+
+      .chat-log {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      .msg-row {
+        display: flex;
+        margin-bottom: 0.75rem;
+      }
+
+      .msg-row.is-mine {
+        justify-content: flex-end;
+      }
+
+      .msg-row .message {
+        min-width: min(260px, 100%);
+        max-width: min(85%, 800px);
+        margin-bottom: 0;
+      }
+
+      .msg-row .message-header {
+        gap: 1.5rem;
+      }
+
+      .msg-row .message-body {
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="chat-app has-background-black-bis">
+      <header class="px-5 pt-4">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <p class="title is-4" id="online"></p>
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <div class="chat-log" id="log">
+        <div class="container is-max-desktop p-4" id="messages"></div>
+      </div>
+
+      <div class="chat-input">
+        <div class="container is-max-desktop px-4 py-3">
+          <form id="form" autocomplete="off">
+            <div class="field has-addons">
+              <div class="control is-expanded">
+                <input class="input" type="text" id="msg" size="64" autofocus />
+              </div>
+              <div class="control">
+                <button
+                  class="button is-info"
+                  type="submit"
+                  aria-label="Отправить"
+                >
+                  <span class="icon is-small is-right">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>
