@@ -107,8 +107,9 @@
         };
 
         if (window["WebSocket"]) {
+          var proto = location.protocol === "https:" ? "wss://" : "ws://";
           conn = new WebSocket(
-            "ws://" +
+            proto +
               document.location.host +
               "/ws?name=" +
               encodeURIComponent(NAME),
