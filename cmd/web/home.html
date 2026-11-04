@@ -17,8 +17,12 @@
     <script type="text/javascript">
       window.onload = function () {
         var conn;
+        var currentRoom = null;
+        var ROOMS = ["general", "dashboard", "customers"];
         var MAX_MESSAGES = 500;
+
         var msg = document.getElementById("msg");
+        var msgbtn = document.getElementById("msgbtn");
         var log = document.getElementById("log");
         var messages = document.getElementById("messages");
 
@@ -27,6 +31,65 @@
           NAME = "User" + Math.floor(Math.random() * 10000);
           sessionStorage.setItem("name", NAME);
         }
+
+        function setActive(room) {
+          ROOMS.forEach(function (r) {
+            var li = document.getElementById(r);
+            if (li)
+              li.querySelector("a").classList.toggle("is-active", r === room);
+          });
+        }
+
+        function connectToRoom(room) {
+          if (room === currentRoom) return;
+          if (conn) {
+            conn.onclose = null;
+            conn.close();
+          }
+
+          currentRoom = room;
+          messages.innerHTML = "";
+          document.getElementById("online").innerText = "";
+          setActive(room);
+
+          var proto = location.protocol === "https:" ? "wss://" : "ws://";
+          conn = new WebSocket(
+            proto +
+              document.location.host +
+              "/ws?name=" +
+              encodeURIComponent(NAME) +
+              "&room=" +
+              encodeURIComponent(room),
+          );
+          conn.onclose = function (evt) {
+            renderSystemText("Connection closed.");
+            msg.disabled = true;
+            msgbtn.disabled = true;
+          };
+          conn.onmessage = function (evt) {
+            var chunks = evt.data.split("\n");
+            for (var i = 0; i < chunks.length; i++) {
+              var m = JSON.parse(chunks[i]);
+
+              switch (m.Type) {
+                case "Online":
+                  updateOnline(m);
+                  break;
+                case "System":
+                  renderSystem(m);
+                  break;
+                default:
+                  renderMessage(m);
+              }
+            }
+          };
+        }
+
+        ROOMS.forEach(function (r) {
+          document.getElementById(r).addEventListener("click", function () {
+            connectToRoom(r);
+          });
+        });
 
         function appendLog(item, forceScroll) {
           var atBottom =
@@ -43,7 +106,7 @@
         }
 
         function updateOnline(n) {
-          document.getElementById("online").innerText = n;
+          document.getElementById("online").innerText = n.Room + " " + n.Online;
         }
 
         function renderSystem(m) {
@@ -55,6 +118,18 @@
             "my-3",
           );
           p.innerText = m.Text;
+          appendLog(p);
+        }
+
+        function renderSystemText(m) {
+          var p = document.createElement("p");
+          p.classList.add(
+            "has-text-centered",
+            "has-text-grey",
+            "is-size-7",
+            "my-3",
+          );
+          p.innerText = m;
           appendLog(p);
         }
 
@@ -101,42 +176,16 @@
           if (!msg.value) {
             return false;
           }
-          conn.send(msg.value);
-          msg.value = "";
+          msg.value = msg.value.trim();
+          if (msg.value.length >= 1) {
+            conn.send(msg.value);
+            msg.value = "";
+          }
           return false;
         };
 
         if (window["WebSocket"]) {
-          var proto = location.protocol === "https:" ? "wss://" : "ws://";
-          conn = new WebSocket(
-            proto +
-              document.location.host +
-              "/ws?name=" +
-              encodeURIComponent(NAME),
-          );
-          conn.onclose = function (evt) {
-            var item = document.createElement("div");
-            item.classList.add("box");
-            item.innerHTML = "<b>Connection closed.</b>";
-            appendLog(item);
-          };
-          conn.onmessage = function (evt) {
-            var messages = evt.data.split("\n");
-            for (var i = 0; i < messages.length; i++) {
-              var m = JSON.parse(messages[i]);
-
-              switch (m.Type) {
-                case "Online":
-                  updateOnline(m.Online);
-                  break;
-                case "System":
-                  renderSystem(m);
-                  break;
-                default:
-                  renderMessage(m);
-              }
-            }
-          };
+          connectToRoom("general");
         } else {
           var item = document.createElement("div");
           item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
@@ -172,11 +221,19 @@
         margin-bottom: 0;
       }
 
+      .message-header {
+        padding: 0.3rem 1rem;
+      }
+
       .msg-row .message-header {
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
         gap: 1.5rem;
       }
 
       .msg-row .message-body {
+        border-end-end-radius: 16px;
+        border-end-start-radius: 16px;
         overflow-wrap: anywhere;
         white-space: pre-wrap;
       }
@@ -185,13 +242,14 @@
   <body>
     <section class="chat-app has-background-black-bis">
       <header class="px-5 pt-4">
-        <nav class="level">
-          <div class="level-left">
-            <div class="level-item">
-              <p class="title is-4" id="online"></p>
-            </div>
-          </div>
-        </nav>
+        <aside class="menu">
+          <p class="menu-label" id="online"></p>
+          <ul class="menu-list">
+            <li id="general"><a>General</a></li>
+            <li id="dashboard"><a>Dashboard</a></li>
+            <li id="customers"><a>Customers</a></li>
+          </ul>
+        </aside>
       </header>
 
       <div class="chat-log" id="log">
@@ -203,11 +261,20 @@
           <form id="form" autocomplete="off">
             <div class="field has-addons">
               <div class="control is-expanded">
-                <input class="input" type="text" id="msg" size="64" autofocus />
+                <input
+                  class="input"
+                  type="text"
+                  id="msg"
+                  size="64"
+                  minlength="1"
+                  maxlength="1024"
+                  autofocus
+                />
               </div>
               <div class="control">
                 <button
                   class="button is-info"
+                  id="msgbtn"
                   type="submit"
                   aria-label="Отправить"
                 >

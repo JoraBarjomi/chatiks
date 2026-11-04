@@ -25,7 +25,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 4096
 )
 
 var (
@@ -40,6 +40,8 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
+	room string
+
 	hub *Hub
 
 	// The websocket connection.
@@ -73,7 +75,9 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- Message{User: c.username, Time: time.Now(), Text: string(message)}
+		if len(message) >= 1 {
+			c.hub.broadcast <- Message{Room: c.room, User: c.username, Time: time.Now(), Text: string(message)}
+		}
 	}
 }
 
@@ -145,7 +149,8 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	name := r.URL.Query().Get("name")
-	client := &Client{hub: hub, conn: conn, send: make(chan Message, 256), username: name}
+	room := r.URL.Query().Get("room")
+	client := &Client{room: room, hub: hub, conn: conn, send: make(chan Message, 256), username: name}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
