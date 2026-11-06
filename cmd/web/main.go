@@ -15,7 +15,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal(".env: ", err)
+		log.Println(".env: ", err)
 	}
 
 	port := os.Getenv("PORT")

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/joho/godotenv"
 )
 
 type Store struct {
@@ -14,10 +13,6 @@ type Store struct {
 }
 
 func InitStore(ctx context.Context, dsn string) (*Store, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
-
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
