@@ -1,18 +1,45 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"main/internal"
+
+	"github.com/joho/godotenv"
 )
 
-var addr = flag.String("addr", ":8090", "http service address")
-
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal(".env: ", err)
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8090"
+	}
+	var addr = flag.String("addr", ":"+port, "http service address")
 	flag.Parse()
-	hub := internal.NewHub()
+
+	var store *internal.Store
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		var err error
+		if store, err = internal.InitStore(ctx, dsn); err != nil {
+			log.Fatal("postgres: ", err)
+		}
+		log.Println("postgres: ok")
+	} else {
+		log.Println(".env: DATABASE_URL not found")
+	}
+
+	hub := internal.NewHub(store)
 
 	go hub.Run()
 

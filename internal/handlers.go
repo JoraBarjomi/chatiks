@@ -43,7 +43,6 @@ type Base struct {
 // 	// utils.Check(err)
 // }
 
-
 func ServeChat(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL)
 	// if r.URL.Path != "/" {
@@ -55,7 +54,7 @@ func ServeChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := Base {
+	data := Base{
 		// IsLoggedIn: true,
 		Title: "Chatiks",
 	}
