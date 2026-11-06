@@ -1,0 +1,55 @@
+{{define "content"}}
+
+<section class="chat-app has-background-black-bis">
+  <header class="px-4 pt-4 has-background-black-ter">
+    <aside class="menu">
+      <p class="menu-label">Chats</p>
+      <ul class="menu-list">
+        <li id="general"><a>General</a></li>
+        <li id="dashboard"><a>Dashboard</a></li>
+        <li id="customers"><a>Customers</a></li>
+      </ul>
+    </aside>
+  </header>
+
+  <section class="chat-form">
+    <div class="chat-log" id="log">
+      <p class="menu-label px-4 pt-4" id="online"></p>
+      <div class="container is-max-desktop p-4" id="messages"></div>
+    </div>
+
+    <div class="chat-input">
+      <div class="container is-max-desktop px-4 py-3">
+        <form id="form" autocomplete="off">
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input
+                class="input"
+                type="text"
+                id="msg"
+                size="64"
+                minlength="1"
+                maxlength="1024"
+                autofocus
+              />
+            </div>
+            <div class="control">
+              <button
+                class="button is-info"
+                id="msgbtn"
+                type="submit"
+                aria-label="Отправить"
+              >
+                <span class="icon is-small is-right">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</section>
+
+{{end}}

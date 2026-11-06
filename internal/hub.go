@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package main
+package internal
 
 import "time"
 
@@ -49,7 +49,7 @@ func (h *Hub) broadcastMsg(msg Message) {
 	}
 }
 
-func newHub() *Hub {
+func NewHub() *Hub {
 	return &Hub{
 		broadcast:  make(chan Message),
 		register:   make(chan *Client),
@@ -62,7 +62,7 @@ func (h *Hub) broadcastOnline(room string) {
 	h.broadcastMsg(Message{Room: room, Type: "Online", Online: len(h.rooms[room])})
 }
 
-func (h *Hub) run() {
+func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:

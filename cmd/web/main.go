@@ -4,38 +4,23 @@ import (
 	"flag"
 	"log"
 	"net/http"
+
+	"main/internal"
 )
 
 var addr = flag.String("addr", ":8090", "http service address")
 
-func serveHome(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL)
-	if r.URL.Path != "/" {
-		http.Error(w, "Not found", http.StatusNotFound)
-		return
-	}
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	http.ServeFile(w, r, "home.html")
-}
-
-// как переключать между hub где хранить их в какой структуре данных нужно ли записывать данные в бд?
-// добавлять удалять редачить как их хранить в бд же надо данные о них и подгружать данные о бд во время запуска но я могу в тестовом виде пока создать
-
 func main() {
 	flag.Parse()
-	hub := newHub()
+	hub := internal.NewHub()
 
-	go hub.run()
+	go hub.Run()
 
 	log.Println("Running on 8090...")
-	http.HandleFunc("/", serveHome)
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { serveWs(hub, w, r) })
+	http.HandleFunc("/", internal.ServeChat)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { internal.ServeWs(hub, w, r) })
 
-	// http.Handle("/files", http.FileServer(http.Dir("files")))
+	http.Handle("/ui/static/", http.StripPrefix("/ui/static/", http.FileServer(http.Dir("./ui/static/"))))
 
 	err := http.ListenAndServe(*addr, nil)
 	if err != nil {

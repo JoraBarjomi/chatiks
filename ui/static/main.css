@@ -1,0 +1,85 @@
+.main-body {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.main-body > nav {
+  flex: 0 0 auto;
+}
+
+.main-body > main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-app {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.chat-form {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.msg-row {
+  display: flex;
+  margin-bottom: 0.75rem;
+}
+
+.msg-row.is-mine {
+  justify-content: flex-end;
+}
+
+.msg-row .message {
+  min-width: min(260px, 100%);
+  max-width: min(85%, 800px);
+  margin-bottom: 0;
+}
+
+.message-header {
+  padding: 0.3rem 1rem;
+}
+
+.msg-row .message-header {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  gap: 1.5rem;
+}
+
+.msg-row .message-body {
+  border-end-end-radius: 16px;
+  border-end-start-radius: 16px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.navbar-item img {
+  width: 50px;
+  height: 50px;
+  max-height: none;
+}
+
+.has-border {
+  border: 2px solid #14151a;
+  border-radius: 8px;
+}
+
+.menu-list a.is-active {
+  background-color: #132b2c;
+  color: #05a791;
+}
